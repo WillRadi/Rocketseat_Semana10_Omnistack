@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import api from './services/api'
 import DevItem from './components/DevItem'
+import DevForm from './components/DevForm'
 import './global.css'
 import './Sidebar.css'
 import './Main.css'
@@ -29,30 +30,7 @@ function App() {
   // Toda vez q altera o estado, o componente é renderizado de novo
   const [devs, setDevs] = useState([])
 
-  const [github_username, setGithubUserName] = useState('')
-  const [techs, setTechs] = useState('')
-  const [latitude, setLatitude] = useState('')
-  const [longitude, setLongitude] = useState('')
-
   // passo o array vazio como parâmetro p determinar q só seja executado uma vez
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords
-
-        // Preenchendo o estado:
-        setLatitude(latitude)
-        setLongitude(longitude)
-      },
-      (err) => {
-        console.log(err)
-      },
-      {
-        timeout: 30000
-      }
-    )
-  }, [])
-
   useEffect(() => {
     async function loadDevs() {
       const response = await api.get('/devs')
@@ -62,22 +40,12 @@ function App() {
     loadDevs()
   }, [])
 
-  async function handleAddDev(e) {
-    e.preventDefault()
-
-    const response = await api.post('/devs', {
-      github_username,
-      techs,
-      latitude,
-      longitude
-    })
-
-    // Limpar campos após submeter form:
-    setGithubUserName('')
-    setTechs('')
+  async function handleAddDev(data) {
+    const response = await api.post('/devs', data)
 
     // React usa Imutabilidade. Não pode-se apenas adicionar coisas. Deve-se criar de novo.
     // ou seja, não existe devs.push(..)
+    // ** spread opeartor quebra o array de devs e passa eles como parâmetros/argumentos p setDevs
     setDevs([...devs, response.data])
   }
 
@@ -85,57 +53,9 @@ function App() {
     <div id="app">
       <aside>
         <strong>Cadastrar</strong>
-        <form onSubmit={ handleAddDev }>
-          <div className="input-block">
-            <label htmlFor="github_username">Usuário do Github</label>
-            <input
-              name="github_username"
-              id="github_username"
-              value={ github_username }
-              onChange={ e => setGithubUserName(e.target.value) }
-              required
-            />
-          </div>
-
-          <div className="input-block">
-            <label htmlFor="techs">Tecnologias</label>
-            <input
-              name="techs"
-              id="techs"
-              value={ techs }
-              onChange={ e => setTechs(e.target.value) }
-              required
-            />
-          </div>
-
-          <div className="input-group">
-            <div className="input-block">
-              <label htmlFor="latitude">Latitude</label>
-              <input
-                type="number"
-                name="latitude"
-                id="latitude"
-                value={ latitude }
-                required
-                onChange={ e => setLatitude(e.target.value) }
-              />
-            </div>
-
-            <div className="input-block">
-              <label htmlFor="longitude">Longitude</label>
-              <input
-                type="number"
-                name="longitude"
-                id="longitude"
-                value={ longitude }
-                required
-                // Meio de alterar valores do estado via input:
-                onChange={ e => setLongitude(e.target.value) }
-              />
-            </div>
-          </div>
-          <button type="submit">Salvar</button>
-        </form>        
+        {/* passa a função p o componente filho atraves da PROPRIEDADE onSubmit */}
+        {/* Assim, no componente filho, ao chamar a propriedade onSubmit, na verdade, será chamada da função handleAddDev */}
+        <DevForm onSubmit={handleAddDev} />
       </aside>
       <main>
         <ul>
